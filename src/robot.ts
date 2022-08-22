@@ -22,13 +22,17 @@ export interface Position {
 
 export default class Robot {
     public position: Position;
+    private readonly maxX = 5;
+    private readonly maxY = 5;
+    private readonly minX = 0;
+    private readonly minY = 0;
 
     constructor() {}
 
     public execute(command: string) {
         const [action, args] = command.split(' ');
 
-        if (!this.isValidCommand(action as Command, args)) {
+        if (!this.isValidCommand(command)) {
             return;
         }
 
@@ -134,17 +138,20 @@ export default class Robot {
     }
 
     private outOfBounds(position: Position) {
-        return position.x > 5 || position.x < 0 || position.y < 0 || position.y > 5; 
+        return !(position.x >= this.minX && position.x <= this.maxX) ||
+            !(position.y >= this.minY && position.y <= this.maxY); 
     }
 
-    private isValidCommand(action: Command, args: any) {
-        const [x, y, f] = args?.split(',') || [];
-        const validCommands = Object.values(Command);
+    private isValidCommand(command: string) {
         const validFacings = Object.values(Facing);
-        
-        return validCommands.includes(action) &&
-            (action === Command.PLACE && Number.isInteger(+x) && Number.isInteger(+y) &&
-                validFacings.includes(f)) ||
-            (action !== Command.PLACE && !args);
+        const validCommands = Object.values(Command);
+        const placeCommandRegex = new RegExp(`^PLACE [${this.minX}-${this.maxX}],[${this.minY}-${this.maxY}],(${validFacings.join('|')})$`);
+        const otherCommandRegex = new RegExp(`^(${validCommands.join('|')})$`);
+
+        if (command.startsWith(Command.PLACE)) {
+            return placeCommandRegex.test(command);
+        } else {
+            return otherCommandRegex.test(command);
+        }
     }
 }
